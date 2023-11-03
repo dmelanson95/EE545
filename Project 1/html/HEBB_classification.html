@@ -1,0 +1,649 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>HEBB_classification</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-10-30"><meta name="DC.source" content="HEBB_classification.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="comment">%Project 1, HEBB</span>
+<span class="comment">%David Melanson</span>
+
+clf <span class="string">reset</span>; clearvars; clc; close <span class="string">all</span>;
+format <span class="string">short</span>
+rng(<span class="string">'shuffle'</span>)
+num = randi(randi(100));
+<span class="keyword">for</span> i = 1:num
+    rng(<span class="string">'shuffle'</span>)
+<span class="keyword">end</span>
+
+maxw = 10;
+minw = 0;
+<span class="comment">% Training array for letter 'E' without noise</span>
+Pe = [
+    1 1 1 1 1, <span class="keyword">...</span>
+    1 -1 -1 -1 -1, <span class="keyword">...</span>
+    1 1 1 1 -1, <span class="keyword">...</span>
+    1 -1 -1 -1 -1, <span class="keyword">...</span>
+    1 1 1 1 1
+    ]';
+
+<span class="comment">% Training array for letter 'F'</span>
+Pf = [
+    1 1 1 -1 -1, <span class="keyword">...</span>
+    1 -1 -1 -1 -1, <span class="keyword">...</span>
+    1 1 1 -1 -1, <span class="keyword">...</span>
+    1 -1 -1 -1 -1, <span class="keyword">...</span>
+    1 -1 -1 -1 -1 <span class="keyword">...</span>
+    ]';
+
+P = cat(2, Pe, Pf);
+
+<span class="comment">% Target for network to indicate identification of letter E is 1, F is -1</span>
+T = [1 -1];
+
+<span class="comment">%Initialize network</span>
+<span class="comment">%===================================================</span>
+[R, ~] = size(P);
+[S, Q] = size(T);
+W0 = zeros(S, R);
+B0 = ones(S, 1);
+
+<span class="comment">% TRAIN THE NETWORK</span>
+<span class="comment">%===================================================</span>
+<span class="comment">% TRAINING PARAMETERS</span>
+disp_freq = 1;
+max_epoch = 1;
+lr = 1;
+lp.lr = lr;
+lp.dr = 0;
+
+W = W0;
+B = B0;
+<span class="keyword">for</span> epoch = 1:max_epoch
+    <span class="keyword">for</span> q = 1:Q
+        <span class="comment">% PRESENTATION PHASE</span>
+        A = T(:, q);
+        <span class="comment">% LEARNING PHASE</span>
+        dW = learnhd(W, P(:,q), [], [], A, [], [], [], [], [], lp, []);
+        W = W +dW;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+numBits = 20;
+iterations = 10000;
+identifiedE = [iterations, numBits];
+identifiedF = [iterations, numBits];
+<span class="keyword">for</span> j = 1:numBits
+    <span class="keyword">for</span> i = 1:iterations
+        testE = makeNoisy(Pe, j);
+        resultE = hardlims(W*testE);
+        <span class="keyword">if</span> resultE &gt; 0
+            identifiedE(i, j) = 1;
+        <span class="keyword">else</span>
+            identifiedE(i, j) = 0;
+        <span class="keyword">end</span>
+
+        testF = makeNoisy(Pf, j);
+        resultF = hardlims(W*testF);
+        <span class="keyword">if</span> resultF &lt; 0
+            identifiedF(i, j) = 1;
+        <span class="keyword">else</span>
+            identifiedF(i, j) = 0;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+identifiedE = sum(identifiedE)./(iterations/100);
+identifiedF = sum(identifiedF)./(iterations/100);
+
+figure;
+subplot(1,2,1);
+bar(1:numBits, identifiedE);
+title(<span class="string">'The Letter E'</span>)
+xlabel(<span class="string">'Number of bits flipped'</span>)
+ylabel(<span class="string">'Correct Identifications (%)'</span>)
+subplot(1,2,2)
+bar(1:numBits, identifiedF);
+title(<span class="string">'The Letter F'</span>)
+xlabel(<span class="string">'Number of bits flipped'</span>)
+ylabel(<span class="string">'Correct Identifications (%)'</span>)
+sgtitle(<span class="string">'Hebb Identification with Bits Flipped'</span>)
+
+figure;
+<span class="keyword">for</span> i = 1:4
+    <span class="keyword">for</span> j = 1:5
+        num = (5*(i-1))+j;
+        subplot(4, 5, num);
+        example = makeNoisy(Pe, num);
+        example = reshape(example, [5,5])';
+        hintonw(example);
+        title([num2str(num), <span class="string">' bit(s) flipped'</span>])
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+sgtitle(<span class="string">'E with bits flipped'</span>)
+
+figure;
+<span class="keyword">for</span> i = 1:4
+    <span class="keyword">for</span> j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = reshape(makeNoisy(Pf, num), [5,5])';
+        hintonw(example);
+        title([num2str(num), <span class="string">' bit(s) flipped'</span>])
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+sgtitle(<span class="string">'F with bits flipped'</span>);
+
+
+fprintf(<span class="string">'\n\nFor the letter "E":\n\n\n'</span>)
+<span class="keyword">for</span> i = 1:numBits
+    fprintf(<span class="string">'Identified %1g percent of inputs with %d bit(s) flipped.\n'</span>, identifiedE(i), i);
+<span class="keyword">end</span>
+fprintf(<span class="string">'\n\nFor the letter "F":\n\n\n'</span>)
+<span class="keyword">for</span> i = 1:numBits
+    fprintf(<span class="string">'Identified %1g percent of inputs with %d bit(s) flipped.\n'</span>, identifiedF(i), i);
+<span class="keyword">end</span>
+
+identifiedE2 = [iterations, numBits];
+identifiedF2 = [iterations, numBits];
+<span class="keyword">for</span> j = 1:numBits
+    <span class="keyword">for</span> i = 1:iterations
+        testE = makeNoisy2(Pe, j);
+        resultE = hardlims(W*testE);
+        <span class="keyword">if</span> resultE &gt; 0
+            identifiedE2(i, j) = 1;
+        <span class="keyword">else</span>
+            identifiedE2(i, j) = 0;
+        <span class="keyword">end</span>
+
+        testF = makeNoisy2(Pf, j);
+        resultF = hardlims(W*testF);
+        <span class="keyword">if</span> resultF &lt; 0
+            identifiedF2(i, j) = 1;
+        <span class="keyword">else</span>
+            identifiedF2(i, j) = 0;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+identifiedE2 = sum(identifiedE2)./(iterations/100);
+identifiedF2 = sum(identifiedF2)./(iterations/100);
+
+figure;
+subplot(1,2,1);
+bar(1:numBits, identifiedE2);
+title(<span class="string">'The Letter E'</span>)
+xlabel(<span class="string">'Number of bits missing'</span>)
+ylabel(<span class="string">'Correct Identifications (%)'</span>)
+subplot(1,2,2)
+bar(1:numBits, identifiedF2);
+title(<span class="string">'The Letter F'</span>)
+xlabel(<span class="string">'Number of bits missing'</span>)
+ylabel(<span class="string">'Correct Identifications (%)'</span>)
+sgtitle(<span class="string">'Hebb Identification with Bits Missing'</span>)
+
+
+figure;
+<span class="keyword">for</span> i = 1:4
+    <span class="keyword">for</span> j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = reshape(makeNoisy2(Pf, num), [5,5])';
+        hintonw(example);
+        title([num2str(num), <span class="string">' bit(s) missing'</span>])
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+sgtitle(<span class="string">'F with bits missing'</span>)
+
+figure;
+<span class="keyword">for</span> i = 1:4
+    <span class="keyword">for</span> j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = reshape(makeNoisy2(Pe, num), [5,5])';
+        hintonw(example);
+        title([num2str(num), <span class="string">' bit(s) missing'</span>])
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+sgtitle(<span class="string">'E with bits missing'</span>)
+
+fprintf(<span class="string">'\n\nFor the letter "E":\n\n\n'</span>)
+<span class="keyword">for</span> i = 1:numBits
+    fprintf(<span class="string">'Identified %1g percent of inputs with %d bit(s) missing.\n'</span>, identifiedE2(i), i);
+<span class="keyword">end</span>
+fprintf(<span class="string">'\n\nFor the letter "F":\n\n\n'</span>)
+<span class="keyword">for</span> i = 1:numBits
+    fprintf(<span class="string">'Identified %1g percent of inputs with %d bit(s) missing.\n'</span>, identifiedF2(i), i);
+<span class="keyword">end</span>
+
+
+<span class="comment">%function that takes an array and a number of bits to flip and does that</span>
+<span class="keyword">function</span> retArr = makeNoisy(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    <span class="keyword">while</span>(diffEl ~= numBits)
+        row = randi(25);
+        retArr(row, 1) = -1*(passArr(row, 1));
+        diffEl = sum(sum(retArr ~= passArr));
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">%function that takes an array and a number of bits to flip and does that</span>
+<span class="keyword">function</span> retArr = makeNoisy2(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    <span class="keyword">while</span>(diffEl ~= numBits)
+        row = randi(25);
+        <span class="keyword">if</span> passArr(row, 1) == 0
+            retArr(row, 1) = 1;
+        <span class="keyword">else</span>
+            retArr(row, 1) = 0;
+        <span class="keyword">end</span>
+        diffEl = sum(sum(retArr ~= passArr));
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+
+For the letter "E":
+
+
+Identified 100 percent of inputs with 1 bit(s) flipped.
+Identified 100 percent of inputs with 2 bit(s) flipped.
+Identified 100 percent of inputs with 3 bit(s) flipped.
+Identified 99.74 percent of inputs with 4 bit(s) flipped.
+Identified 98.64 percent of inputs with 5 bit(s) flipped.
+Identified 96.64 percent of inputs with 6 bit(s) flipped.
+Identified 93.16 percent of inputs with 7 bit(s) flipped.
+Identified 88.49 percent of inputs with 8 bit(s) flipped.
+Identified 82.27 percent of inputs with 9 bit(s) flipped.
+Identified 73.73 percent of inputs with 10 bit(s) flipped.
+Identified 65.05 percent of inputs with 11 bit(s) flipped.
+Identified 54.85 percent of inputs with 12 bit(s) flipped.
+Identified 44.38 percent of inputs with 13 bit(s) flipped.
+Identified 34.95 percent of inputs with 14 bit(s) flipped.
+Identified 26.72 percent of inputs with 15 bit(s) flipped.
+Identified 18.6 percent of inputs with 16 bit(s) flipped.
+Identified 11.58 percent of inputs with 17 bit(s) flipped.
+Identified 6.66 percent of inputs with 18 bit(s) flipped.
+Identified 3.46 percent of inputs with 19 bit(s) flipped.
+Identified 1.1 percent of inputs with 20 bit(s) flipped.
+
+
+For the letter "F":
+
+
+Identified 100 percent of inputs with 1 bit(s) flipped.
+Identified 100 percent of inputs with 2 bit(s) flipped.
+Identified 100 percent of inputs with 3 bit(s) flipped.
+Identified 99.75 percent of inputs with 4 bit(s) flipped.
+Identified 98.97 percent of inputs with 5 bit(s) flipped.
+Identified 96.77 percent of inputs with 6 bit(s) flipped.
+Identified 93.67 percent of inputs with 7 bit(s) flipped.
+Identified 88.11 percent of inputs with 8 bit(s) flipped.
+Identified 82 percent of inputs with 9 bit(s) flipped.
+Identified 73.85 percent of inputs with 10 bit(s) flipped.
+Identified 64.74 percent of inputs with 11 bit(s) flipped.
+Identified 55.32 percent of inputs with 12 bit(s) flipped.
+Identified 44.96 percent of inputs with 13 bit(s) flipped.
+Identified 35.4 percent of inputs with 14 bit(s) flipped.
+Identified 25.55 percent of inputs with 15 bit(s) flipped.
+Identified 18.26 percent of inputs with 16 bit(s) flipped.
+Identified 11.32 percent of inputs with 17 bit(s) flipped.
+Identified 6.98 percent of inputs with 18 bit(s) flipped.
+Identified 2.78 percent of inputs with 19 bit(s) flipped.
+Identified 1.22 percent of inputs with 20 bit(s) flipped.
+
+
+For the letter "E":
+
+
+Identified 100 percent of inputs with 1 bit(s) missing.
+Identified 100 percent of inputs with 2 bit(s) missing.
+Identified 100 percent of inputs with 3 bit(s) missing.
+Identified 100 percent of inputs with 4 bit(s) missing.
+Identified 100 percent of inputs with 5 bit(s) missing.
+Identified 100 percent of inputs with 6 bit(s) missing.
+Identified 100 percent of inputs with 7 bit(s) missing.
+Identified 100 percent of inputs with 8 bit(s) missing.
+Identified 100 percent of inputs with 9 bit(s) missing.
+Identified 100 percent of inputs with 10 bit(s) missing.
+Identified 100 percent of inputs with 11 bit(s) missing.
+Identified 100 percent of inputs with 12 bit(s) missing.
+Identified 100 percent of inputs with 13 bit(s) missing.
+Identified 100 percent of inputs with 14 bit(s) missing.
+Identified 100 percent of inputs with 15 bit(s) missing.
+Identified 100 percent of inputs with 16 bit(s) missing.
+Identified 100 percent of inputs with 17 bit(s) missing.
+Identified 100 percent of inputs with 18 bit(s) missing.
+Identified 100 percent of inputs with 19 bit(s) missing.
+Identified 100 percent of inputs with 20 bit(s) missing.
+
+
+For the letter "F":
+
+
+Identified 100 percent of inputs with 1 bit(s) missing.
+Identified 100 percent of inputs with 2 bit(s) missing.
+Identified 100 percent of inputs with 3 bit(s) missing.
+Identified 100 percent of inputs with 4 bit(s) missing.
+Identified 100 percent of inputs with 5 bit(s) missing.
+Identified 100 percent of inputs with 6 bit(s) missing.
+Identified 100 percent of inputs with 7 bit(s) missing.
+Identified 99.98 percent of inputs with 8 bit(s) missing.
+Identified 99.99 percent of inputs with 9 bit(s) missing.
+Identified 100 percent of inputs with 10 bit(s) missing.
+Identified 99.92 percent of inputs with 11 bit(s) missing.
+Identified 99.79 percent of inputs with 12 bit(s) missing.
+Identified 99.68 percent of inputs with 13 bit(s) missing.
+Identified 99.09 percent of inputs with 14 bit(s) missing.
+Identified 98.61 percent of inputs with 15 bit(s) missing.
+Identified 97.75 percent of inputs with 16 bit(s) missing.
+Identified 96.05 percent of inputs with 17 bit(s) missing.
+Identified 93.62 percent of inputs with 18 bit(s) missing.
+Identified 89.81 percent of inputs with 19 bit(s) missing.
+Identified 83.77 percent of inputs with 20 bit(s) missing.
+</pre><img vspace="5" hspace="5" src="HEBB_classification_01.png" alt=""> <img vspace="5" hspace="5" src="HEBB_classification_02.png" alt=""> <img vspace="5" hspace="5" src="HEBB_classification_03.png" alt=""> <img vspace="5" hspace="5" src="HEBB_classification_04.png" alt=""> <img vspace="5" hspace="5" src="HEBB_classification_05.png" alt=""> <img vspace="5" hspace="5" src="HEBB_classification_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%Project 1, HEBB
+%David Melanson
+
+clf reset; clearvars; clc; close all;
+format short
+rng('shuffle')
+num = randi(randi(100));
+for i = 1:num
+    rng('shuffle')
+end
+
+maxw = 10;
+minw = 0;
+% Training array for letter 'E' without noise
+Pe = [
+    1 1 1 1 1, ...
+    1 -1 -1 -1 -1, ...
+    1 1 1 1 -1, ...
+    1 -1 -1 -1 -1, ...
+    1 1 1 1 1
+    ]';
+
+% Training array for letter 'F'
+Pf = [
+    1 1 1 -1 -1, ...
+    1 -1 -1 -1 -1, ...
+    1 1 1 -1 -1, ...
+    1 -1 -1 -1 -1, ...
+    1 -1 -1 -1 -1 ...
+    ]';
+
+P = cat(2, Pe, Pf);
+
+% Target for network to indicate identification of letter E is 1, F is -1
+T = [1 -1];
+
+%Initialize network
+%===================================================
+[R, ~] = size(P);
+[S, Q] = size(T);
+W0 = zeros(S, R);
+B0 = ones(S, 1);
+
+% TRAIN THE NETWORK
+%===================================================
+% TRAINING PARAMETERS
+disp_freq = 1;
+max_epoch = 1;
+lr = 1;
+lp.lr = lr;
+lp.dr = 0;
+
+W = W0;
+B = B0;
+for epoch = 1:max_epoch
+    for q = 1:Q
+        % PRESENTATION PHASE
+        A = T(:, q);
+        % LEARNING PHASE
+        dW = learnhd(W, P(:,q), [], [], A, [], [], [], [], [], lp, []);
+        W = W +dW;
+    end
+end
+
+numBits = 20;
+iterations = 10000;
+identifiedE = [iterations, numBits];
+identifiedF = [iterations, numBits];
+for j = 1:numBits
+    for i = 1:iterations
+        testE = makeNoisy(Pe, j);
+        resultE = hardlims(W*testE);
+        if resultE > 0
+            identifiedE(i, j) = 1;
+        else
+            identifiedE(i, j) = 0;
+        end
+        
+        testF = makeNoisy(Pf, j);
+        resultF = hardlims(W*testF);
+        if resultF < 0
+            identifiedF(i, j) = 1;
+        else
+            identifiedF(i, j) = 0;
+        end
+    end
+end
+
+identifiedE = sum(identifiedE)./(iterations/100);
+identifiedF = sum(identifiedF)./(iterations/100);
+
+figure;
+subplot(1,2,1);
+bar(1:numBits, identifiedE);
+title('The Letter E')
+xlabel('Number of bits flipped')
+ylabel('Correct Identifications (%)')
+subplot(1,2,2)
+bar(1:numBits, identifiedF);
+title('The Letter F')
+xlabel('Number of bits flipped')
+ylabel('Correct Identifications (%)')
+sgtitle('Hebb Identification with Bits Flipped')
+
+figure;
+for i = 1:4
+    for j = 1:5
+        num = (5*(i-1))+j;
+        subplot(4, 5, num);
+        example = makeNoisy(Pe, num);
+        example = reshape(example, [5,5])';
+        hintonw(example);
+        title([num2str(num), ' bit(s) flipped'])
+    end
+end
+sgtitle('E with bits flipped')
+
+figure;
+for i = 1:4
+    for j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = reshape(makeNoisy(Pf, num), [5,5])';
+        hintonw(example);
+        title([num2str(num), ' bit(s) flipped'])
+    end
+end
+sgtitle('F with bits flipped');
+
+
+fprintf('\n\nFor the letter "E":\n\n\n')
+for i = 1:numBits
+    fprintf('Identified %1g percent of inputs with %d bit(s) flipped.\n', identifiedE(i), i);
+end
+fprintf('\n\nFor the letter "F":\n\n\n')
+for i = 1:numBits
+    fprintf('Identified %1g percent of inputs with %d bit(s) flipped.\n', identifiedF(i), i);
+end
+
+identifiedE2 = [iterations, numBits];
+identifiedF2 = [iterations, numBits];
+for j = 1:numBits
+    for i = 1:iterations
+        testE = makeNoisy2(Pe, j);
+        resultE = hardlims(W*testE);
+        if resultE > 0
+            identifiedE2(i, j) = 1;
+        else
+            identifiedE2(i, j) = 0;
+        end
+        
+        testF = makeNoisy2(Pf, j);
+        resultF = hardlims(W*testF);
+        if resultF < 0
+            identifiedF2(i, j) = 1;
+        else
+            identifiedF2(i, j) = 0;
+        end
+    end
+end
+
+identifiedE2 = sum(identifiedE2)./(iterations/100);
+identifiedF2 = sum(identifiedF2)./(iterations/100);
+
+figure;
+subplot(1,2,1);
+bar(1:numBits, identifiedE2);
+title('The Letter E')
+xlabel('Number of bits missing')
+ylabel('Correct Identifications (%)')
+subplot(1,2,2)
+bar(1:numBits, identifiedF2);
+title('The Letter F')
+xlabel('Number of bits missing')
+ylabel('Correct Identifications (%)')
+sgtitle('Hebb Identification with Bits Missing')
+
+
+figure;
+for i = 1:4
+    for j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = reshape(makeNoisy2(Pf, num), [5,5])';
+        hintonw(example);
+        title([num2str(num), ' bit(s) missing'])
+    end
+end
+sgtitle('F with bits missing')
+
+figure;
+for i = 1:4
+    for j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = reshape(makeNoisy2(Pe, num), [5,5])';
+        hintonw(example);
+        title([num2str(num), ' bit(s) missing'])
+    end
+end
+sgtitle('E with bits missing')
+
+fprintf('\n\nFor the letter "E":\n\n\n')
+for i = 1:numBits
+    fprintf('Identified %1g percent of inputs with %d bit(s) missing.\n', identifiedE2(i), i);
+end
+fprintf('\n\nFor the letter "F":\n\n\n')
+for i = 1:numBits
+    fprintf('Identified %1g percent of inputs with %d bit(s) missing.\n', identifiedF2(i), i);
+end
+
+
+%function that takes an array and a number of bits to flip and does that
+function retArr = makeNoisy(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    while(diffEl ~= numBits)
+        row = randi(25);
+        retArr(row, 1) = -1*(passArr(row, 1));
+        diffEl = sum(sum(retArr ~= passArr));
+    end
+end
+
+%function that takes an array and a number of bits to flip and does that
+function retArr = makeNoisy2(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    while(diffEl ~= numBits)
+        row = randi(25);
+        if passArr(row, 1) == 0
+            retArr(row, 1) = 1;
+        else
+            retArr(row, 1) = 0;
+        end
+        diffEl = sum(sum(retArr ~= passArr));
+    end
+end
+
+
+##### SOURCE END #####
+--></body></html>

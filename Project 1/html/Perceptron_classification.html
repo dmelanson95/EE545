@@ -1,0 +1,510 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Perceptron_classification</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-10-30"><meta name="DC.source" content="Perceptron_classification.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Loop to test if network will properly identify noisy E and Fs</a></li><li><a href="#3">Plotting of original E and F, creation of examples of noisy E and F</a></li></ul></div><pre class="codeinput"><span class="comment">%Project 1, Perceptron</span>
+<span class="comment">%David Melanson</span>
+
+<span class="comment">%%Input Section</span>
+clear <span class="string">all</span>; clc; cla; clf; close <span class="string">all</span>;
+format <span class="string">short</span>
+rng(<span class="string">'shuffle'</span>)
+num = randi(randi(100));
+<span class="keyword">for</span> i = 1:num
+    rng(<span class="string">'shuffle'</span>)
+<span class="keyword">end</span>
+
+<span class="comment">% Binary inputs for letters E and F</span>
+Pe = [
+    1 1 1 1 1, <span class="keyword">...</span>
+    1 0 0 0 0, <span class="keyword">...</span>
+    1 1 1 1 0, <span class="keyword">...</span>
+    1 0 0 0 0, <span class="keyword">...</span>
+    1 1 1 1 1
+    ]';
+
+Pf = [
+    1 1 1 0 0, <span class="keyword">...</span>
+    1 0 0 0 0, <span class="keyword">...</span>
+    1 1 1 0 0, <span class="keyword">...</span>
+    1 0 0 0 0, <span class="keyword">...</span>
+    1 0 0 0 0
+    ]';
+
+P = cat(2, Pe, Pf);
+
+<span class="comment">% E target is 1, F is 0</span>
+T = [1 0];
+<span class="comment">%Input layer</span>
+[R, ~] = size(P);
+[S, Q] = size(T);
+
+<span class="comment">%Initialize network parameters</span>
+<span class="comment">%Change_Marker</span>
+
+<span class="comment">%Initialize weights randomly</span>
+W = rand(S,R);
+Wp = W(:, 1:R-1);
+
+<span class="comment">%watchon;</span>
+<span class="comment">%cla;</span>
+E=1;
+
+
+<span class="comment">%sum squared error performance function</span>
+<span class="keyword">while</span> (sse(E))
+    Ai = hardlim(W*P);
+    Ei = T-Ai;
+    dWq = learnp(W, P, [], [], [], [], Ei, [], [], [], [], []);
+    W = W+dWq;
+    A = hardlim(W*P);
+    E = T-A;
+<span class="keyword">end</span>
+<span class="comment">%watchoff;</span>
+fprintf(<span class="string">'\nTarget is '</span>)
+fprintf(<span class="string">'%2i'</span>, T)
+fprintf(<span class="string">'\nSolution reached '</span>)
+fprintf(<span class="string">'%2i'</span>, A)
+fprintf(<span class="string">'\nWith weights\n'</span>)
+fprintf(<span class="string">'%1f %1f %1f %1f %1f\n'</span>, W)
+
+Wp = W(:, 1:R-1);
+Bp = W(:, R);
+</pre><pre class="codeoutput">
+Target is  1 0
+Solution reached  1 0
+With weights
+-0.723210 -0.979735 -0.325236 1.316211 1.781148
+-0.432034 0.018665 0.866019 0.858183 0.254867
+-0.509471 -0.990766 -0.098240 1.800708 0.302641
+-0.082366 0.184877 0.327790 0.516877 0.646143
+-0.699938 1.222999 1.213505 1.486311 1.576534
+</pre><h2 id="2">Loop to test if network will properly identify noisy E and Fs</h2><p>goes through 10000 iterations, flipping one more bit every loop until</p><pre class="codeinput"><span class="comment">%its tested up to 20 bits flipped</span>
+
+numBits = 20;
+iterations = 10000;
+identifiedE = [iterations, numBits];
+identifiedF = [iterations, numBits];
+<span class="keyword">for</span> j = 1:numBits
+    <span class="keyword">for</span> i = 1:iterations
+
+        testE = makeNoisy(Pe, j);
+        resultE = hardlim(W*testE);
+        <span class="keyword">if</span> resultE &gt; 0
+            identifiedE(i, j) = 1;
+        <span class="keyword">else</span>
+            identifiedE(i, j) = 0;
+        <span class="keyword">end</span>
+        testF = makeNoisy(Pf, j);
+        resultF = hardlim(W*testF);
+        <span class="keyword">if</span> resultF == 0
+            identifiedF(i, j) = 1;
+        <span class="keyword">else</span>
+            identifiedF(i, j) = 0;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+identifiedE = sum(identifiedE)./(iterations/100);
+identifiedF = sum(identifiedF)./(iterations/100);
+</pre><h2 id="3">Plotting of original E and F, creation of examples of noisy E and F</h2><p>and graphing of results of the above identifications</p><pre class="codeinput">figure;
+hintonw(reshape(Pe, [5,5])')
+title(<span class="string">'Original E'</span>)
+
+figure;
+<span class="keyword">for</span> i = 1:4
+    <span class="keyword">for</span> j = 1:5
+        num = (5*(i-1))+j;
+        subplot(4, 5, num);
+        example = makeNoisy(Pe, num);
+        example = reshape(example, [5,5])';
+        hintonw(example);
+        title([num2str(num), <span class="string">' bit(s) flipped'</span>])
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+sgtitle(<span class="string">'E with bits flipped'</span>)
+
+figure;
+hintonw(reshape(Pf, [5,5])')
+title(<span class="string">'Original F'</span>)
+
+
+figure;
+<span class="keyword">for</span> i = 1:4
+    <span class="keyword">for</span> j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = makeNoisy(Pf, num);
+        example = reshape(example, [5,5])';
+        hintonw(example);
+        title([num2str(num), <span class="string">' bit(s) flipped'</span>])
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+sgtitle(<span class="string">'F with bits flipped'</span>);
+
+
+figure;
+subplot(1,2,1);
+bar(1:numBits, identifiedE);
+title(<span class="string">'Perceptron Identification of the Letter E'</span>)
+xlabel(<span class="string">'Number of bits flipped'</span>)
+ylabel(<span class="string">'Correct Identifications (%)'</span>)
+subplot(1,2,2)
+bar(1:numBits, identifiedF);
+title(<span class="string">'Perceptron Identification of the Letter F'</span>)
+xlabel(<span class="string">'Number of bits flipped'</span>)
+ylabel(<span class="string">'Correct Identifications (%)'</span>)
+
+
+
+fprintf(<span class="string">'\n\nFor the letter "E":\n\n\n'</span>)
+<span class="keyword">for</span> i = 1:numBits
+    fprintf(<span class="string">'Identified %1g percent of inputs with %d bit(s) flipped.\n'</span>, identifiedE(i), i);
+<span class="keyword">end</span>
+fprintf(<span class="string">'\n\nFor the letter "F":\n\n\n'</span>)
+<span class="keyword">for</span> i = 1:numBits
+    fprintf(<span class="string">'Identified %1g percent of inputs with %d bit(s) flipped.\n'</span>, identifiedF(i), i);
+<span class="keyword">end</span>
+
+figure;
+hintonw(reshape(makeNoisy2(Pf, 1), [5,5])')
+title(<span class="string">'F with bits missing'</span>)
+
+
+<span class="comment">%function that takes an array and a number of bits to flip and does that</span>
+<span class="keyword">function</span> retArr = makeNoisy(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    <span class="keyword">while</span>(diffEl ~= numBits)
+        row = randi(25);
+        <span class="keyword">if</span> passArr(row, 1) == 0
+            retArr(row, 1) = 1;
+        <span class="keyword">else</span>
+            retArr(row, 1) = 0;
+        <span class="keyword">end</span>
+        diffEl = sum(sum(retArr ~= passArr));
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">%function that takes an array and a number of bits to flip and does that</span>
+<span class="keyword">function</span> retArr = makeNoisy2(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    <span class="keyword">while</span>(diffEl ~= numBits)
+        row = randi(25);
+        retArr(row, 1) = -1*(passArr(row, 1));
+        diffEl = sum(sum(retArr ~= passArr));
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+
+For the letter "E":
+
+
+Identified 100 percent of inputs with 1 bit(s) flipped.
+Identified 100 percent of inputs with 2 bit(s) flipped.
+Identified 100 percent of inputs with 3 bit(s) flipped.
+Identified 99.76 percent of inputs with 4 bit(s) flipped.
+Identified 99.43 percent of inputs with 5 bit(s) flipped.
+Identified 99.37 percent of inputs with 6 bit(s) flipped.
+Identified 99.15 percent of inputs with 7 bit(s) flipped.
+Identified 98.7 percent of inputs with 8 bit(s) flipped.
+Identified 98.11 percent of inputs with 9 bit(s) flipped.
+Identified 98.11 percent of inputs with 10 bit(s) flipped.
+Identified 98.12 percent of inputs with 11 bit(s) flipped.
+Identified 97.81 percent of inputs with 12 bit(s) flipped.
+Identified 97.69 percent of inputs with 13 bit(s) flipped.
+Identified 97.98 percent of inputs with 14 bit(s) flipped.
+Identified 98.27 percent of inputs with 15 bit(s) flipped.
+Identified 97.93 percent of inputs with 16 bit(s) flipped.
+Identified 98.04 percent of inputs with 17 bit(s) flipped.
+Identified 98.74 percent of inputs with 18 bit(s) flipped.
+Identified 99.52 percent of inputs with 19 bit(s) flipped.
+Identified 99.94 percent of inputs with 20 bit(s) flipped.
+
+
+For the letter "F":
+
+
+Identified 100 percent of inputs with 1 bit(s) flipped.
+Identified 100 percent of inputs with 2 bit(s) flipped.
+Identified 99.73 percent of inputs with 3 bit(s) flipped.
+Identified 95.6 percent of inputs with 4 bit(s) flipped.
+Identified 82.02 percent of inputs with 5 bit(s) flipped.
+Identified 58.18 percent of inputs with 6 bit(s) flipped.
+Identified 34.22 percent of inputs with 7 bit(s) flipped.
+Identified 14.95 percent of inputs with 8 bit(s) flipped.
+Identified 4.88 percent of inputs with 9 bit(s) flipped.
+Identified 1.29 percent of inputs with 10 bit(s) flipped.
+Identified 0.28 percent of inputs with 11 bit(s) flipped.
+Identified 0.05 percent of inputs with 12 bit(s) flipped.
+Identified 0 percent of inputs with 13 bit(s) flipped.
+Identified 0 percent of inputs with 14 bit(s) flipped.
+Identified 0 percent of inputs with 15 bit(s) flipped.
+Identified 0 percent of inputs with 16 bit(s) flipped.
+Identified 0 percent of inputs with 17 bit(s) flipped.
+Identified 0 percent of inputs with 18 bit(s) flipped.
+Identified 0 percent of inputs with 19 bit(s) flipped.
+Identified 0 percent of inputs with 20 bit(s) flipped.
+</pre><img vspace="5" hspace="5" src="Perceptron_classification_01.png" alt=""> <img vspace="5" hspace="5" src="Perceptron_classification_02.png" alt=""> <img vspace="5" hspace="5" src="Perceptron_classification_03.png" alt=""> <img vspace="5" hspace="5" src="Perceptron_classification_04.png" alt=""> <img vspace="5" hspace="5" src="Perceptron_classification_05.png" alt=""> <img vspace="5" hspace="5" src="Perceptron_classification_06.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%Project 1, Perceptron
+%David Melanson
+
+%%Input Section
+clear all; clc; cla; clf; close all;
+format short
+rng('shuffle')
+num = randi(randi(100));
+for i = 1:num
+    rng('shuffle')
+end
+
+% Binary inputs for letters E and F
+Pe = [
+    1 1 1 1 1, ...
+    1 0 0 0 0, ...
+    1 1 1 1 0, ...
+    1 0 0 0 0, ...
+    1 1 1 1 1
+    ]';
+
+Pf = [
+    1 1 1 0 0, ...
+    1 0 0 0 0, ...
+    1 1 1 0 0, ...
+    1 0 0 0 0, ...
+    1 0 0 0 0
+    ]';
+
+P = cat(2, Pe, Pf);
+
+% E target is 1, F is 0
+T = [1 0];
+%Input layer
+[R, ~] = size(P);
+[S, Q] = size(T);
+
+%Initialize network parameters
+%Change_Marker
+
+%Initialize weights randomly
+W = rand(S,R);
+Wp = W(:, 1:R-1);
+
+%watchon;
+%cla;
+E=1;
+
+
+%sum squared error performance function
+while (sse(E))
+    Ai = hardlim(W*P);
+    Ei = T-Ai;
+    dWq = learnp(W, P, [], [], [], [], Ei, [], [], [], [], []);
+    W = W+dWq;
+    A = hardlim(W*P);
+    E = T-A;
+end
+%watchoff;
+fprintf('\nTarget is ')
+fprintf('%2i', T)
+fprintf('\nSolution reached ')
+fprintf('%2i', A)
+fprintf('\nWith weights\n')
+fprintf('%1f %1f %1f %1f %1f\n', W)
+
+Wp = W(:, 1:R-1);
+Bp = W(:, R);
+
+%% Loop to test if network will properly identify noisy E and Fs
+% goes through 10000 iterations, flipping one more bit every loop until
+%its tested up to 20 bits flipped
+
+numBits = 20;
+iterations = 10000;
+identifiedE = [iterations, numBits];
+identifiedF = [iterations, numBits];
+for j = 1:numBits
+    for i = 1:iterations
+        
+        testE = makeNoisy(Pe, j);
+        resultE = hardlim(W*testE);
+        if resultE > 0
+            identifiedE(i, j) = 1;
+        else
+            identifiedE(i, j) = 0;
+        end
+        testF = makeNoisy(Pf, j);
+        resultF = hardlim(W*testF);
+        if resultF == 0
+            identifiedF(i, j) = 1;
+        else
+            identifiedF(i, j) = 0;
+        end
+    end
+end
+
+identifiedE = sum(identifiedE)./(iterations/100);
+identifiedF = sum(identifiedF)./(iterations/100);
+
+%% Plotting of original E and F, creation of examples of noisy E and F
+% and graphing of results of the above identifications
+
+
+figure;
+hintonw(reshape(Pe, [5,5])')
+title('Original E')
+
+figure;
+for i = 1:4
+    for j = 1:5
+        num = (5*(i-1))+j;
+        subplot(4, 5, num);
+        example = makeNoisy(Pe, num);
+        example = reshape(example, [5,5])';
+        hintonw(example);
+        title([num2str(num), ' bit(s) flipped'])
+    end
+end
+sgtitle('E with bits flipped')
+
+figure;
+hintonw(reshape(Pf, [5,5])')
+title('Original F')
+
+
+figure;
+for i = 1:4
+    for j = 1:5
+        num = j+(5*(i-1));
+        subplot(4, 5, num);
+        example = makeNoisy(Pf, num);
+        example = reshape(example, [5,5])';
+        hintonw(example);
+        title([num2str(num), ' bit(s) flipped'])
+    end
+end
+sgtitle('F with bits flipped');
+
+
+figure;
+subplot(1,2,1);
+bar(1:numBits, identifiedE);
+title('Perceptron Identification of the Letter E')
+xlabel('Number of bits flipped')
+ylabel('Correct Identifications (%)')
+subplot(1,2,2)
+bar(1:numBits, identifiedF);
+title('Perceptron Identification of the Letter F')
+xlabel('Number of bits flipped')
+ylabel('Correct Identifications (%)')
+
+
+
+fprintf('\n\nFor the letter "E":\n\n\n')
+for i = 1:numBits
+    fprintf('Identified %1g percent of inputs with %d bit(s) flipped.\n', identifiedE(i), i);
+end
+fprintf('\n\nFor the letter "F":\n\n\n')
+for i = 1:numBits
+    fprintf('Identified %1g percent of inputs with %d bit(s) flipped.\n', identifiedF(i), i);
+end
+
+figure;
+hintonw(reshape(makeNoisy2(Pf, 1), [5,5])')
+title('F with bits missing')
+
+
+%function that takes an array and a number of bits to flip and does that
+function retArr = makeNoisy(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    while(diffEl ~= numBits)
+        row = randi(25);
+        if passArr(row, 1) == 0
+            retArr(row, 1) = 1;
+        else
+            retArr(row, 1) = 0;
+        end
+        diffEl = sum(sum(retArr ~= passArr));
+    end
+end
+
+%function that takes an array and a number of bits to flip and does that
+function retArr = makeNoisy2(passArr, numBits)
+    diffEl = 0;
+    retArr = passArr;
+    while(diffEl ~= numBits)
+        row = randi(25);
+        retArr(row, 1) = -1*(passArr(row, 1));
+        diffEl = sum(sum(retArr ~= passArr));
+    end
+end
+##### SOURCE END #####
+--></body></html>
