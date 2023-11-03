@@ -1,0 +1,261 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Homework_2P1_PERCEPTRON</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-10-10"><meta name="DC.source" content="Homework_2P1_PERCEPTRON.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput">clear <span class="string">all</span>; clc; cla; clf;
+pause_flag = 0;
+max_epoch = 200;
+
+<span class="comment">%Input vectors</span>
+P = [
+    -1.0 -1.0 2.0 1.0 2.0 3.0;
+    1.0 2.0 -1.0 3.0 3.0 -1.0;
+    1.0 1.0 1.0 1.0 1.0 1.0
+    ];
+
+<span class="comment">%Target vector</span>
+T = [1 1 1 0 0 0];
+
+<span class="comment">%Input layer</span>
+[R, Q] = size(P); [S, Q] = size(T);
+
+<span class="comment">%Initialize network parameters</span>
+figure(1);
+plotpv(P(1:R-1,:), T);
+Change_Marker
+
+<span class="comment">%Initialize weights randomly</span>
+W = rand(S,R);
+Wp = W(:, 1:R-1);
+Bp = W(:,R);
+
+<span class="comment">%display initial values</span>
+<span class="comment">%The input vectors are replotted</span>
+plotpv(P(1:R-1,:), T);
+
+plotpc(Wp, Bp);
+
+watchon;
+cla;
+plotpv(P(1:R-1,:), T);
+
+pause(3);
+figure(1);
+E=1;
+linehandle = plotpc(Wp, Bp);
+<span class="comment">%disp('Hit something to continue');</span>
+
+<span class="comment">%sum squared error performance function</span>
+epoch = 1;
+<span class="keyword">while</span> (sse(E) &amp;&amp; (epoch &lt;= max_epoch))
+    Ai = hardlim(W*P);
+    Ei = T-Ai;
+    dWq = learnp(W, P, [], [], [], [], Ei, [], [], [], [], []);
+    W = W+dWq;
+    Wp = W(:, R-1);
+    Bp = W(:, R);
+    linehandle = plotpc(Wp, Bp, linehandle);
+    lines = findobj(gcf, <span class="string">'Type'</span>, <span class="string">'Line'</span>);
+    Change_LineWidth
+    Change_Marker
+    drawnow;
+    <span class="keyword">if</span>(pause_flag == 1)
+        pause(1);
+    <span class="keyword">end</span>
+    A = hardlim(W*P);
+    <span class="comment">%error - Target minus calculated this epoch</span>
+    E = T-A;
+    <span class="comment">%disp(E)</span>
+    epoch = epoch +1;
+<span class="keyword">end</span>
+watchoff;
+disp(<span class="string">'Target is '</span>)
+T
+disp(<span class="string">'Solution reached of '</span>)
+A
+disp(<span class="string">'With weights '</span>)
+W
+
+testPoint = findobj(gca, <span class="string">'Type'</span>, <span class="string">'Line'</span>);
+set(testPoint, <span class="string">'Color'</span>, <span class="string">'red'</span>);
+hold <span class="string">on</span>;
+plotpv(P(1:R-1, :), T)
+Wp = W(:, 1:R-1);
+Bp = W(:, R);
+plotpc(Wp, Bp);
+Change_LineWidth
+Change_Marker
+hold <span class="string">off</span>;
+</pre><pre class="codeoutput">Target is 
+
+T =
+
+     1     1     1     0     0     0
+
+Solution reached of 
+
+A =
+
+     1     1     1     0     0     0
+
+With weights 
+
+W =
+
+   -2.2463   -2.6196    3.5678
+
+</pre><img vspace="5" hspace="5" src="Homework_2P1_PERCEPTRON_01.png" alt=""> <img vspace="5" hspace="5" src="Homework_2P1_PERCEPTRON_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+clear all; clc; cla; clf;
+pause_flag = 0;
+max_epoch = 200;
+
+%Input vectors
+P = [
+    -1.0 -1.0 2.0 1.0 2.0 3.0;
+    1.0 2.0 -1.0 3.0 3.0 -1.0;
+    1.0 1.0 1.0 1.0 1.0 1.0
+    ];
+
+%Target vector
+T = [1 1 1 0 0 0];
+
+%Input layer
+[R, Q] = size(P); [S, Q] = size(T);
+
+%Initialize network parameters
+figure(1);
+plotpv(P(1:R-1,:), T);
+Change_Marker
+
+%Initialize weights randomly
+W = rand(S,R);
+Wp = W(:, 1:R-1);
+Bp = W(:,R);
+
+%display initial values
+%The input vectors are replotted
+plotpv(P(1:R-1,:), T);
+
+plotpc(Wp, Bp);
+
+watchon;
+cla;
+plotpv(P(1:R-1,:), T);
+
+pause(3);
+figure(1);
+E=1;
+linehandle = plotpc(Wp, Bp);
+%disp('Hit something to continue');
+
+%sum squared error performance function
+epoch = 1;
+while (sse(E) && (epoch <= max_epoch))
+    Ai = hardlim(W*P);
+    Ei = T-Ai;
+    dWq = learnp(W, P, [], [], [], [], Ei, [], [], [], [], []);
+    W = W+dWq;
+    Wp = W(:, R-1);
+    Bp = W(:, R);
+    linehandle = plotpc(Wp, Bp, linehandle);
+    lines = findobj(gcf, 'Type', 'Line');
+    Change_LineWidth
+    Change_Marker
+    drawnow;
+    if(pause_flag == 1)
+        pause(1);
+    end
+    A = hardlim(W*P);
+    %error - Target minus calculated this epoch
+    E = T-A;
+    %disp(E)
+    epoch = epoch +1;
+end
+watchoff;
+disp('Target is ')
+T
+disp('Solution reached of ')
+A
+disp('With weights ')
+W
+
+testPoint = findobj(gca, 'Type', 'Line');
+set(testPoint, 'Color', 'red');
+hold on;
+plotpv(P(1:R-1, :), T)
+Wp = W(:, 1:R-1);
+Bp = W(:, R);
+plotpc(Wp, Bp);
+Change_LineWidth
+Change_Marker
+hold off;
+
+
+##### SOURCE END #####
+--></body></html>
